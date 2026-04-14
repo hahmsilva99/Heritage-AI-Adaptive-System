@@ -87,7 +87,10 @@ if 'chat_history' not in st.session_state:
 # --- 3. Sidebar ---
 st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Flag_of_Sri_Lanka.svg/1200px-Flag_of_Sri_Lanka.svg.png", width=100)
 st.sidebar.title("Navigation 🧭")
-app_mode = st.sidebar.radio("Select View:", ["1. Tourist Explorer (User)", "2. Admin Dashboard (Panel)"])
+
+# 🔥 CHANGED HERE: Radio button changed to a Dropdown (selectbox)
+app_mode = st.sidebar.selectbox("Select View:", ["1. Tourist Explorer (User)", "2. Admin Dashboard (Panel)"])
+
 st.sidebar.markdown("---")
 st.sidebar.info("🤖 **Status: AI Online**\n\nModel Accuracy: 96.88%\n\n*Optimizing for Heritage Conservation.*")
 
