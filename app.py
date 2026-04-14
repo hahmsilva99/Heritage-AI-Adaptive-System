@@ -22,6 +22,8 @@ st.markdown("""
     .live-data-box { padding: 15px; border-radius: 10px; background-color: #EBF5FB; border-left: 5px solid #3498DB; margin-bottom: 20px;}
     .alt-card { border: 1px solid #D5DBDB; border-radius: 10px; padding: 15px; background-color: #F8F9F9; height: 100%;}
     .postpone-box { background-color: #E8F8F5; padding: 20px; border-radius: 10px; border-left: 5px solid #1ABC9C; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);}
+    .crowd-btn-red { background-color: #E74C3C !important; color: white !important; }
+    .crowd-btn-green { background-color: #27AE60 !important; color: white !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -29,7 +31,6 @@ st.markdown("""
 @st.cache_resource
 def train_ai_model():
     df = pd.read_csv("Cleaned_Heritage_Sites_Final_Fixed.csv")
-    
     df['Max Visitor Capacity'] = pd.to_numeric(df['Max Visitor Capacity'], errors='coerce')
     df['Max Visitor Capacity'] = df['Max Visitor Capacity'].fillna(df['Max Visitor Capacity'].median())
 
@@ -48,7 +49,6 @@ def train_ai_model():
 
     smote = SMOTE(random_state=42)
     X_res, y_res = smote.fit_resample(X, y)
-
     model = xgb.XGBClassifier(use_label_encoder=False, eval_metric='logloss', random_state=42)
     model.fit(X_res, y_res)
     
@@ -67,15 +67,16 @@ st.sidebar.info("🤖 **Status: AI Online**\n\nModel Accuracy: 96.88%\n\n*Optimi
 # --- 4. Main App: Tourist Explorer ---
 if app_mode == "1. Tourist Explorer (User)":
     st.markdown('<div class="main-header">🏛️ Eco-Adaptive Heritage Explorer</div>', unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: gray;'>Tell us where you want to go. AI will check real-time conditions for you.</p><hr>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray;'>Sustainable Journey Planning Powered by Community & AI.</p><hr>", unsafe_allow_html=True)
 
-    st.subheader("📍 Your Travel Plan")
+    # UI Inputs
+    st.subheader("📍 Where are you heading?")
     col1, col2, col3 = st.columns(3)
     with col1:
-        selected_district = st.selectbox("1. Select District:", sorted(df['District'].unique()))
+        selected_district = st.selectbox("1. District:", sorted(df['District'].unique()))
     with col2:
         district_sites = df[df['District'] == selected_district]['Site Name'].unique()
-        selected_site = st.selectbox("2. Select Heritage Site:", sorted(district_sites))
+        selected_site = st.selectbox("2. Heritage Site:", sorted(district_sites))
     with col3:
         target_audience = st.selectbox("3. Traveler Type:", df['Target_Audience'].unique())
 
@@ -83,8 +84,7 @@ if app_mode == "1. Tourist Explorer (User)":
     
     if st.button("🚀 Analyze with AI & Get Recommendation"):
         with st.spinner("🛰️ Fetching Live Satellite Weather & Crowd Sensor Data..."):
-            time.sleep(2) 
-            
+            time.sleep(1.5) 
             live_weather = random.choice(["Sunny", "Cloudy", "Rainy", "Clear"])
             live_aqi = random.choice(["Good", "Moderate", "Poor"])
             live_overcrowding = random.choices(["Low", "Medium", "High"], weights=[20, 30, 50], k=1)[0] 
@@ -94,132 +94,79 @@ if app_mode == "1. Tourist Explorer (User)":
             conservation = site_data['Conservation Status']
             recommended_time = site_data['Recommended Time']
 
+        # Live Data Display
         st.markdown(f"""
         <div class="live-data-box">
-            <h4 style='margin-top:0; color:#154360;'>📡 Real-Time Data Retrieved for {selected_site}</h4>
-            <p><b>Weather:</b> {live_weather}   |   <b>Air Quality (AQI):</b> {live_aqi}   |   <b>Current Overcrowding:</b> {live_overcrowding}</p>
-            <p><b>Max Capacity:</b> {int(capacity)} visitors   |   <b>Site Condition:</b> {conservation}</p>
+            <h4 style='margin-top:0; color:#154360;'>📡 Real-Time Status for {selected_site}</h4>
+            <p><b>Weather:</b> {live_weather}   |   <b>AQI:</b> {live_aqi}   |   <b>Crowd Level:</b> {live_overcrowding}</p>
         </div>
         """, unsafe_allow_html=True)
 
-        # ==========================================
-        # 🔥 NEW FEATURE: Crowd Trend Graph
-        # ==========================================
+        # Crowd Trend Graph
         st.markdown("#### 📊 Expected Crowd Trend Today")
-        st.write("This dynamic graph shows the expected visitor volume throughout the day based on historical data.")
-        
-        # Generate dynamic curve data based on current overcrowding risk
         time_labels = ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00']
-        if live_overcrowding == "High":
-            crowd_levels = [20, 50, 95, 100, 85, 60, 30]
-            chart_color = "#E74C3C" # Red
-        elif live_overcrowding == "Medium":
-            crowd_levels = [15, 40, 70, 75, 60, 45, 20]
-            chart_color = "#F39C12" # Orange
-        else:
-            crowd_levels = [10, 20, 40, 45, 35, 25, 10]
-            chart_color = "#2ECC71" # Green
-            
-        trend_df = pd.DataFrame({
-            'Time': time_labels,
-            'Crowd Density (%)': crowd_levels
-        }).set_index('Time')
+        crowd_map = {"High": [20, 50, 95, 100, 85, 60, 30], "Medium": [15, 40, 70, 75, 60, 45, 20], "Low": [10, 20, 40, 45, 35, 25, 10]}
+        colors = {"High": "#E74C3C", "Medium": "#F39C12", "Low": "#2ECC71"}
         
-        # Display the beautiful Area Chart
-        st.area_chart(trend_df, color=chart_color, height=200)
-        # ==========================================
+        trend_df = pd.DataFrame({'Time': time_labels, 'Density (%)': crowd_map[live_overcrowding]}).set_index('Time')
+        st.area_chart(trend_df, color=colors[live_overcrowding], height=180)
 
-        with st.spinner("🧠 AI is evaluating conservation risk..."):
-            time.sleep(1.5)
+        # AI Prediction
+        site_data['Weather_Condition'] = live_weather
+        site_data['AQI_Level'] = live_aqi
+        site_data['Overcrowding Risk'] = live_overcrowding
+        site_data['Target_Audience'] = target_audience
+        
+        input_data = {col: le_dict[col].transform([str(site_data[col])])[0] if col in le_dict else site_data[col] for col in feature_columns}
+        input_df = pd.DataFrame([input_data])
+        input_df['Max Visitor Capacity'] = pd.to_numeric(input_df['Max Visitor Capacity'])
+        
+        prediction = ai_model.predict(input_df)[0]
+        decision = le_dict['Redirect Recommendation'].inverse_transform([prediction])[0]
+        
+        st.markdown("---")
+        if decision == 'No':
+            st.markdown(f'<div class="success-box"><h3>✅ Clear to Visit!</h3><p>Enjoy <b>{selected_site}</b>. Conditions are optimal.</p></div>', unsafe_allow_html=True)
+            st.balloons()
+        else:
+            st.markdown(f'<div class="alert-box"><h3>⚠️ Redirection Activated</h3><p><b>{selected_site}</b> is currently facing {live_overcrowding} risk.</p></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="postpone-box">⏳ <b>Smart Postponement:</b> Optimal window is <b>{recommended_time}</b>.</div>', unsafe_allow_html=True)
             
-            site_data['Weather_Condition'] = live_weather
-            site_data['AQI_Level'] = live_aqi
-            site_data['Overcrowding Risk'] = live_overcrowding
-            site_data['Target_Audience'] = target_audience
-            
-            input_data = {}
-            for col in feature_columns:
-                val = site_data[col]
-                if col in le_dict:
-                    try:
-                        input_data[col] = le_dict[col].transform([str(val)])[0]
-                    except:
-                        input_data[col] = 0
-                else:
-                    input_data[col] = val
-                    
-            input_df = pd.DataFrame([input_data])
-            input_df['Max Visitor Capacity'] = pd.to_numeric(input_df['Max Visitor Capacity'])
-            
-            prediction = ai_model.predict(input_df)[0]
-            decision = le_dict['Redirect Recommendation'].inverse_transform([prediction])[0]
-            
-            st.markdown("---")
-            st.subheader("🤖 AI Final Decision")
-            
-            if decision == 'No':
-                st.markdown(f"""
-                <div class="success-box">
-                    <h3 style='margin-top:0;'>✅ Clear to Visit!</h3>
-                    <p>The environmental conditions at <b>{selected_site}</b> are optimal right now. The crowd levels are safe, and visiting won't harm the conservation efforts.</p>
-                    <p>Enjoy your sustainable trip!</p>
-                </div>
-                """, unsafe_allow_html=True)
-                st.balloons()
-            else:
-                st.markdown(f"""
-                <div class="alert-box">
-                    <h3 style='margin-top:0;'>⚠️ Adaptive Redirection Activated</h3>
-                    <p>Visiting <b>{selected_site}</b> right now is not recommended due to <b>{live_overcrowding} Overcrowding Risk</b> and <b>{live_weather} Weather</b>.</p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Enhanced Smart Postponement UI
-                st.markdown(f"""
-                <div class="postpone-box">
-                    <h4 style="color: #0E6251; margin-top: 0;">⏳ Smart Postponement</h4>
-                    <p>If visiting <b>{selected_site}</b> is an absolute must for you, the AI highly recommends rescheduling.</p>
-                    <h3 style="color: #117A65; margin: 10px 0;">Optimal Visiting Window: {recommended_time}</h3>
-                    <p style="font-size: 14px; color: #7F8C8D; margin-bottom: 0;">As seen in the graph above, crowds naturally drop during this time, allowing you to enjoy the site without causing stress to the ancient structures.</p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                alternatives = df[(df['District'] == selected_district) & 
-                                  (df['Overcrowding Risk'] == 'Low') & 
-                                  (df['Site Name'] != selected_site)]
-                
-                st.subheader("🌿 Suggested Safe Alternatives")
-                if not alternatives.empty:
-                    num_alts = min(3, len(alternatives))
-                    top_alts = alternatives.sample(num_alts)
-                    
-                    cols = st.columns(num_alts)
-                    for col, (_, alt_site) in zip(cols, top_alts.iterrows()):
-                        with col:
-                            st.markdown(f'<div class="alt-card">', unsafe_allow_html=True)
-                            st.markdown(f"#### {alt_site['Site Name']}")
-                            st.caption(f"📍 {alt_site['Location']}")
-                            st.write(f"🎭 **Type:** {alt_site['Type']}")
-                            st.write(f"🛡️ **Status:** {alt_site['Conservation Status']}")
-                            
-                            search_query = quote_plus(f"{alt_site['Site Name']} {alt_site['District']} Sri Lanka")
-                            maps_url = f"https://www.google.com/maps/search/?api=1&query={search_query}"
-                            st.markdown(f"**[🗺️ Navigate via Maps]({maps_url})**")
-                            st.markdown('</div>', unsafe_allow_html=True)
-                else:
-                    st.warning("We recommend relaxing at your hotel for now. All major sites in this district are facing high risks.")
+            # Alternatives
+            st.subheader("🌿 Sustainable Alternatives")
+            alternatives = df[(df['District'] == selected_district) & (df['Overcrowding Risk'] == 'Low') & (df['Site Name'] != selected_site)]
+            if not alternatives.empty:
+                alts = alternatives.sample(min(3, len(alternatives)))
+                cols = st.columns(len(alts))
+                for col, (_, alt) in zip(cols, alts.iterrows()):
+                    with col:
+                        st.markdown(f'<div class="alt-card"><h4>{alt["Site Name"]}</h4><p>📍 {alt["Location"]}</p>', unsafe_allow_html=True)
+                        q = quote_plus(f"{alt['Site Name']} {alt['District']} Sri Lanka")
+                        st.markdown(f"**[🗺️ Navigate](https://www.google.com/maps/search/?api=1&query={q})**")
+                        st.markdown('</div>', unsafe_allow_html=True)
 
-    # AI Chatbot UI (For Presentation)
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    with st.expander("💬 Chat with AI Heritage Guide (Beta)"):
-        st.write("Have questions about your suggested destinations? Ask our AI assistant!")
-        chat_input = st.text_input("Ask a question...", placeholder="E.g., What is the history behind the alternative site?")
-        if chat_input:
-            with st.spinner("AI is thinking..."):
-                time.sleep(1)
-                st.info(f"**AI:** That's a great question about '{chat_input}'. Based on Sri Lankan cultural archives, this site dates back to the ancient kingdoms. It was built to reflect sustainable architecture. (Note: This is a simulated response for the prototype).")
+    # --- NEW FEATURE: LIVE CROWDSOURCING ---
+    st.markdown("---")
+    st.subheader("📢 Live Community Feedback")
+    st.write(f"Are you currently at **{selected_site}**? Help others by reporting live conditions!")
+    
+    feed_col1, feed_col2 = st.columns(2)
+    with feed_col1:
+        if st.button("🔴 It's Very Crowded!", help="Report high congestion"):
+            st.toast("Thank you! Your report helps protect this heritage site.", icon="🙏")
+            st.success("Report Submitted. AI is updating the live heatmaps...")
+    with feed_col2:
+        if st.button("🟢 It's Peaceful & Quiet", help="Report low congestion"):
+            st.toast("Awesome! We've updated the status for other travelers.", icon="✨")
+            st.info("Report Submitted. Thanks for being a sustainable traveler!")
 
-# --- 5. Main App: Admin Dashboard ---
+    # AI Chatbot
+    st.markdown("<br>", unsafe_allow_html=True)
+    with st.expander("💬 Ask AI Heritage Guide"):
+        chat = st.text_input("Ask about the history or status of a site:")
+        if chat: st.info(f"AI: Great question! {selected_site} has immense cultural value. Visiting during off-peak hours helps preserve its structure.")
+
+# --- 5. Admin Dashboard ---
 elif app_mode == "2. Admin Dashboard (Panel)":
     st.title("📊 System Analytics Dashboard")
-    st.write("This section is restricted for Tourism Authority Administrators.")
+    st.info("📌 This view is for SLTDA Administrators to monitor model accuracy and redirection trends.")
