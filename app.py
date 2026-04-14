@@ -22,6 +22,7 @@ st.markdown("""
     .live-data-box { padding: 15px; border-radius: 10px; background-color: #EBF5FB; border-left: 5px solid #3498DB; margin-bottom: 20px;}
     .alt-card { border: 1px solid #D5DBDB; border-radius: 10px; padding: 15px; background-color: #F8F9F9; height: 100%;}
     .postpone-box { background-color: #E8F8F5; padding: 20px; border-radius: 10px; border-left: 5px solid #1ABC9C; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);}
+    .crowd-box { background-color: #FFF9C4; padding: 20px; border-radius: 10px; border-left: 5px solid #F1C40F; margin-top: 30px; margin-bottom: 20px;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -73,18 +74,17 @@ if app_mode == "1. Tourist Explorer (User)":
     st.markdown('<div class="main-header">🏛️ Eco-Adaptive Heritage Explorer</div>', unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: gray;'>Sustainable Journey Planning Powered by Community & AI.</p><hr>", unsafe_allow_html=True)
 
-    # UI Inputs
+    # UI Inputs (Travel Plan)
     st.subheader("📍 Where are you heading?")
     col1, col2, col3 = st.columns(3)
     with col1:
-        selected_district = st.selectbox("1. District:", sorted(df['District'].unique()))
+        selected_district = st.selectbox("1. Destination District:", sorted(df['District'].unique()), key="dest_dist")
     with col2:
         district_sites = df[df['District'] == selected_district]['Site Name'].unique()
-        selected_site = st.selectbox("2. Heritage Site:", sorted(district_sites))
+        selected_site = st.selectbox("2. Heritage Site:", sorted(district_sites), key="dest_site")
     with col3:
-        target_audience = st.selectbox("3. Traveler Type:", df['Target_Audience'].unique())
+        target_audience = st.selectbox("3. Traveler Type:", df['Target_Audience'].unique(), key="dest_type")
 
-    # If user changes the site, reset the analysis view to keep UI clean
     if st.session_state.current_site != selected_site:
         st.session_state.analyzed = False
         st.session_state.current_site = selected_site
@@ -95,7 +95,6 @@ if app_mode == "1. Tourist Explorer (User)":
     if st.button("🚀 Analyze with AI & Get Recommendation"):
         st.session_state.analyzed = True
         
-        # We generate random live data ONLY when button is pressed, and save to session state so it doesn't change when chatting
         with st.spinner("🛰️ Fetching Live Satellite Weather & Crowd Sensor Data..."):
             time.sleep(1.5) 
             st.session_state.live_weather = random.choice(["Sunny", "Cloudy", "Rainy", "Clear"])
@@ -109,7 +108,6 @@ if app_mode == "1. Tourist Explorer (User)":
         conservation = site_data['Conservation Status']
         recommended_time = site_data['Recommended Time']
 
-        # Live Data Display
         st.markdown(f"""
         <div class="live-data-box">
             <h4 style='margin-top:0; color:#154360;'>📡 Real-Time Status for {selected_site}</h4>
@@ -117,7 +115,6 @@ if app_mode == "1. Tourist Explorer (User)":
         </div>
         """, unsafe_allow_html=True)
 
-        # Crowd Trend Graph
         st.markdown("#### 📊 Expected Crowd Trend Today")
         time_labels = ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00']
         crowd_map = {"High": [20, 50, 95, 100, 85, 60, 30], "Medium": [15, 40, 70, 75, 60, 45, 20], "Low": [10, 20, 40, 45, 35, 25, 10]}
@@ -126,7 +123,6 @@ if app_mode == "1. Tourist Explorer (User)":
         trend_df = pd.DataFrame({'Time': time_labels, 'Density (%)': crowd_map[st.session_state.live_overcrowding]}).set_index('Time')
         st.area_chart(trend_df, color=colors[st.session_state.live_overcrowding], height=180)
 
-        # AI Prediction
         site_data['Weather_Condition'] = st.session_state.live_weather
         site_data['AQI_Level'] = st.session_state.live_aqi
         site_data['Overcrowding Risk'] = st.session_state.live_overcrowding
@@ -147,7 +143,6 @@ if app_mode == "1. Tourist Explorer (User)":
             st.markdown(f'<div class="alert-box"><h3>⚠️ Redirection Activated</h3><p><b>{selected_site}</b> is currently facing {st.session_state.live_overcrowding} risk.</p></div>', unsafe_allow_html=True)
             st.markdown(f'<div class="postpone-box">⏳ <b>Smart Postponement:</b> Optimal window is <b>{recommended_time}</b>.</div>', unsafe_allow_html=True)
             
-            # Alternatives
             st.subheader("🌿 Sustainable Alternatives")
             alternatives = df[(df['District'] == selected_district) & (df['Overcrowding Risk'] == 'Low') & (df['Site Name'] != selected_site)]
             if not alternatives.empty:
@@ -160,29 +155,44 @@ if app_mode == "1. Tourist Explorer (User)":
                         st.markdown(f"**[🗺️ Navigate](https://www.google.com/maps/search/?api=1&query={q})**")
                         st.markdown('</div>', unsafe_allow_html=True)
 
-        # --- LIVE CROWDSOURCING BUTTONS ---
-        st.markdown("---")
-        st.subheader("📢 Live Community Feedback")
-        st.write(f"Are you currently at **{selected_site}**? Help others by reporting live conditions!")
+        # ==========================================
+        # 🔥 UPDATED FEATURE: Advanced Live Crowdsourcing
+        # ==========================================
+        st.markdown(f'<div class="crowd-box">', unsafe_allow_html=True)
+        st.subheader("📢 Help the Community: Report Live Conditions")
+        st.write("Are you currently visiting a heritage site? Select your location below and let others know the crowd situation in real-time!")
         
-        feed_col1, feed_col2 = st.columns(2)
-        with feed_col1:
-            if st.button("🔴 It's Very Crowded!", help="Report high congestion"):
+        # Unique Selection purely for reporting
+        report_col1, report_col2 = st.columns(2)
+        with report_col1:
+            report_district = st.selectbox("I am currently in (District):", sorted(df['District'].unique()), key="report_dist")
+        with report_col2:
+            report_sites = df[df['District'] == report_district]['Site Name'].unique()
+            report_site = st.selectbox("I am currently visiting (Site):", sorted(report_sites), key="report_site")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Reporting Buttons dynamically updated with the site name
+        btn_col1, btn_col2 = st.columns(2)
+        with btn_col1:
+            if st.button(f"🔴 It's Very Crowded at {report_site}!", key="btn_crowd"):
                 st.toast("Thank you! Your report helps protect this heritage site.", icon="🙏")
-                st.success("Report Submitted. AI is updating the live heatmaps...")
-        with feed_col2:
-            if st.button("🟢 It's Peaceful & Quiet", help="Report low congestion"):
+                st.success(f"High Crowd Alert submitted for {report_site}. AI is updating the live heatmaps...")
+        with btn_col2:
+            if st.button(f"🟢 It's Peaceful & Quiet at {report_site}", key="btn_peace"):
                 st.toast("Awesome! We've updated the status for other travelers.", icon="✨")
-                st.info("Report Submitted. Thanks for being a sustainable traveler!")
+                st.info(f"Peaceful Status submitted for {report_site}. Thanks for being a sustainable traveler!")
+        st.markdown('</div>', unsafe_allow_html=True)
+        # ==========================================
 
         # --- AI CHATBOT UI ---
         st.markdown("<br>", unsafe_allow_html=True)
         with st.expander("💬 Ask AI Heritage Guide"):
-            chat = st.text_input("Ask about the history or status of a site:")
+            chat = st.text_input("Ask about the history or status of a site:", key="chat_input")
             if chat: 
                 with st.spinner("AI is thinking..."):
                     time.sleep(1)
-                    st.info(f"**AI:** Great question about '{chat}'! {selected_site} has immense cultural value. Visiting during off-peak hours helps preserve its structure.")
+                    st.info(f"**AI:** Great question about '{chat}'! The sites in {selected_district} have immense cultural value. Visiting during off-peak hours helps preserve their structure.")
 
 # --- 5. Admin Dashboard ---
 elif app_mode == "2. Admin Dashboard (Panel)":
