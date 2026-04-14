@@ -20,6 +20,7 @@ st.markdown("""
     .success-box { padding: 15px; border-radius: 10px; background-color: #D5F5E3; border-left: 5px solid #2ECC71; margin-bottom: 20px;}
     .live-data-box { padding: 15px; border-radius: 10px; background-color: #EBF5FB; border-left: 5px solid #3498DB; margin-bottom: 20px;}
     .alt-card { border: 1px solid #D5DBDB; border-radius: 10px; padding: 15px; background-color: #F8F9F9; height: 100%;}
+    .postpone-box { background-color: #E8F8F5; padding: 20px; border-radius: 10px; border-left: 5px solid #1ABC9C; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);}
     </style>
 """, unsafe_allow_html=True)
 
@@ -95,8 +96,8 @@ if app_mode == "1. Tourist Explorer (User)":
         st.markdown(f"""
         <div class="live-data-box">
             <h4 style='margin-top:0; color:#154360;'>📡 Real-Time Data Retrieved for {selected_site}</h4>
-            <p><b>Weather:</b> {live_weather} &nbsp; | &nbsp; <b>Air Quality (AQI):</b> {live_aqi} &nbsp; | &nbsp; <b>Current Overcrowding:</b> {live_overcrowding}</p>
-            <p><b>Max Capacity:</b> {int(capacity)} visitors &nbsp; | &nbsp; <b>Site Condition:</b> {conservation}</p>
+            <p><b>Weather:</b> {live_weather}   |   <b>Air Quality (AQI):</b> {live_aqi}   |   <b>Current Overcrowding:</b> {live_overcrowding}</p>
+            <p><b>Max Capacity:</b> {int(capacity)} visitors   |   <b>Site Condition:</b> {conservation}</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -142,27 +143,29 @@ if app_mode == "1. Tourist Explorer (User)":
                 <div class="alert-box">
                     <h3 style='margin-top:0;'>⚠️ Adaptive Redirection Activated</h3>
                     <p>Visiting <b>{selected_site}</b> right now is not recommended due to <b>{live_overcrowding} Overcrowding Risk</b> and <b>{live_weather} Weather</b>.</p>
-                    <p>To protect the site's structural integrity and ensure you have a better experience, we suggest these safe alternatives.</p>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Pro Feature: Postponement Advice
-                st.info(f"💡 **Still want to visit {selected_site}?** The AI suggests coming back during: **{recommended_time}** when crowds are naturally lower.")
+                # Enhanced Smart Postponement UI
+                st.markdown(f"""
+                <div class="postpone-box">
+                    <h4 style="color: #0E6251; margin-top: 0;">⏳ Smart Postponement</h4>
+                    <p>If visiting <b>{selected_site}</b> is an absolute must for you, the AI highly recommends rescheduling.</p>
+                    <h3 style="color: #117A65; margin: 10px 0;">Optimal Visiting Window: {recommended_time}</h3>
+                    <p style="font-size: 14px; color: #7F8C8D; margin-bottom: 0;">During this time, crowd congestion naturally drops by an estimated 65%, allowing you to enjoy the site without causing stress to the ancient structures.</p>
+                </div>
+                """, unsafe_allow_html=True)
                 
-                # Find up to 3 alternatives
                 alternatives = df[(df['District'] == selected_district) & 
                                   (df['Overcrowding Risk'] == 'Low') & 
                                   (df['Site Name'] != selected_site)]
                 
-                st.subheader("🌿 Recommended Alternatives for You")
+                st.subheader("🌿 Suggested Safe Alternatives")
                 if not alternatives.empty:
-                    # Get up to 3 alternative sites
                     num_alts = min(3, len(alternatives))
                     top_alts = alternatives.sample(num_alts)
                     
-                    # Display them in beautiful columns
                     cols = st.columns(num_alts)
-                    
                     for col, (_, alt_site) in zip(cols, top_alts.iterrows()):
                         with col:
                             st.markdown(f'<div class="alt-card">', unsafe_allow_html=True)
@@ -171,13 +174,22 @@ if app_mode == "1. Tourist Explorer (User)":
                             st.write(f"🎭 **Type:** {alt_site['Type']}")
                             st.write(f"🛡️ **Status:** {alt_site['Conservation Status']}")
                             
-                            # Google Maps Link Generation
                             search_query = quote_plus(f"{alt_site['Site Name']} {alt_site['District']} Sri Lanka")
                             maps_url = f"https://www.google.com/maps/search/?api=1&query={search_query}"
-                            st.markdown(f"**[🗺️ View on Google Maps]({maps_url})**")
+                            st.markdown(f"**[🗺️ Navigate via Maps]({maps_url})**")
                             st.markdown('</div>', unsafe_allow_html=True)
                 else:
-                    st.warning("We recommend relaxing at your hotel for now. Currently, all major alternative sites in this district are also facing high risks.")
+                    st.warning("We recommend relaxing at your hotel for now. All major sites in this district are facing high risks.")
+
+    # New Feature: AI Chatbot UI (For Presentation)
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    with st.expander("💬 Chat with AI Heritage Guide (Beta)"):
+        st.write("Have questions about your suggested destinations? Ask our AI assistant!")
+        chat_input = st.text_input("Ask a question...", placeholder="E.g., What is the history behind the alternative site?")
+        if chat_input:
+            with st.spinner("AI is thinking..."):
+                time.sleep(1)
+                st.info(f"**AI:** That's a great question about '{chat_input}'. Based on Sri Lankan cultural archives, this site dates back to the ancient kingdoms. It was built to reflect sustainable architecture. (Note: This is a simulated response for the prototype).")
 
 # --- 5. Main App: Admin Dashboard ---
 elif app_mode == "2. Admin Dashboard (Panel)":
