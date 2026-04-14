@@ -131,30 +131,30 @@ if app_mode == "1. Tourist Explorer (User)":
     st.markdown("<p style='text-align: center; color: gray;'>Sustainable Journey Planning Powered by Community & AI.</p><hr>", unsafe_allow_html=True)
 
     # ==========================================
-    # 🔥 UPDATED HEADINGS HERE
+    # 🔥 UPDATED DROPDOWNS (WITH index=None)
     # ==========================================
     st.subheader("📍 Step 1: Primary Destination Configuration")
     col1, col2, col3 = st.columns(3) 
     with col1:
-        selected_district = st.selectbox("Destination District:", sorted(df['District'].unique()), key="dest_dist")
+        selected_district = st.selectbox("Destination District:", sorted(df['District'].unique()), key="dest_dist", index=None, placeholder="Select District...")
     with col2:
-        district_sites = df[df['District'] == selected_district]['Site Name'].unique()
-        selected_site = st.selectbox("Heritage Site:", sorted(district_sites), key="dest_site")
+        district_sites = df[df['District'] == selected_district]['Site Name'].unique() if selected_district else []
+        selected_site = st.selectbox("Heritage Site:", sorted(district_sites), key="dest_site", index=None, placeholder="Select Site...")
     with col3:
-        nationality = st.selectbox("Nationality:", ["Local (Sri Lankan)", "Foreign (Tourist)"], key="nat_type")
+        nationality = st.selectbox("Nationality:", ["Local (Sri Lankan)", "Foreign (Tourist)"], key="nat_type", index=None, placeholder="Select Nationality...")
 
     st.subheader("🎒 Step 2: Smart Accessibility & Eco-Profile")
     st.markdown("<p style='font-size: 14px; color: gray;'>Help the AI recommend the most comfortable and sustainable route for you.</p>", unsafe_allow_html=True)
     
     t_col1, t_col2, t_col3 = st.columns(3)
     with t_col1:
-        target_audience = st.selectbox("Traveler Interest:", df['Target_Audience'].unique(), key="dest_type")
+        target_audience = st.selectbox("Traveler Interest:", df['Target_Audience'].unique(), key="dest_type", index=None, placeholder="Select Interest...")
     with t_col2:
-        mobility_level = st.selectbox("Mobility Needs:", ["Standard", "Elderly / Kids Friendly", "Wheelchair Accessible"])
+        mobility_level = st.selectbox("Mobility Needs:", ["Standard", "Elderly / Kids Friendly", "Wheelchair Accessible"], index=None, placeholder="Select Mobility...")
     with t_col3:
-        transport_mode = st.selectbox("Transport Mode:", ["Private Vehicle", "Public Transport", "Cycling / Walking"])
+        transport_mode = st.selectbox("Transport Mode:", ["Private Vehicle", "Public Transport", "Cycling / Walking"], index=None, placeholder="Select Transport...")
 
-    if st.session_state.current_site != selected_site:
+    if st.session_state.current_site != selected_site and selected_site is not None:
         st.session_state.analyzed = False
         st.session_state.accepted_alt = False
         st.session_state.chat_history = [] 
@@ -162,16 +162,21 @@ if app_mode == "1. Tourist Explorer (User)":
 
     st.markdown("<br>", unsafe_allow_html=True)
     
+    # Validation logic before running the analysis
     if st.button("🚀 Analyze with AI & Get Recommendation"):
-        st.session_state.analyzed = True
-        st.session_state.accepted_alt = False 
-        st.session_state.total_users += 1
-        
-        with st.spinner("🛰️ Fetching Live Satellite Weather & Crowd Sensor Data..."):
-            time.sleep(1.5) 
-            st.session_state.live_weather = random.choice(["Sunny", "Cloudy", "Rainy", "Clear"])
-            st.session_state.live_aqi = random.choice(["Good", "Moderate", "Poor"])
-            st.session_state.live_overcrowding = random.choices(["Low", "Medium", "High"], weights=[10, 40, 50], k=1)[0] 
+        # Check if any dropdown is still empty
+        if None in [selected_district, selected_site, nationality, target_audience, mobility_level, transport_mode]:
+            st.error("⚠️ Please select all the options in Step 1 and Step 2 before analyzing.")
+        else:
+            st.session_state.analyzed = True
+            st.session_state.accepted_alt = False 
+            st.session_state.total_users += 1
+            
+            with st.spinner("🛰️ Fetching Live Satellite Weather & Crowd Sensor Data..."):
+                time.sleep(1.5) 
+                st.session_state.live_weather = random.choice(["Sunny", "Cloudy", "Rainy", "Clear"])
+                st.session_state.live_aqi = random.choice(["Good", "Moderate", "Poor"])
+                st.session_state.live_overcrowding = random.choices(["Low", "Medium", "High"], weights=[10, 40, 50], k=1)[0] 
 
     if st.session_state.analyzed:
         site_data = df[df['Site Name'] == selected_site].iloc[0].copy()
@@ -316,21 +321,23 @@ if app_mode == "1. Tourist Explorer (User)":
 
             fc_col1, fc_col2 = st.columns([1, 2])
             with fc_col1:
-                forecast_day = st.selectbox("Select Timeline:", ["Tomorrow", "Coming Weekend", "Next Week"], key="forecast_day")
+                # Forecasting dropdown made empty too!
+                forecast_day = st.selectbox("Select Timeline:", ["Tomorrow", "Coming Weekend", "Next Week"], key="forecast_day", index=None, placeholder="Select Date...")
 
             with fc_col2:
-                f_weather = random.choice(["Sunny", "Clear", "Light Rain"])
-                f_crowd = random.choice(["Low", "Medium", "High"])
-                f_color = "🔴" if f_crowd == "High" else "🟠" if f_crowd == "Medium" else "🟢"
-                f_price, f_unit, _, _ = calculate_smart_ticket(selected_site, nationality, f_crowd)
+                if forecast_day: # Only show if selected
+                    f_weather = random.choice(["Sunny", "Clear", "Light Rain"])
+                    f_crowd = random.choice(["Low", "Medium", "High"])
+                    f_color = "🔴" if f_crowd == "High" else "🟠" if f_crowd == "Medium" else "🟢"
+                    f_price, f_unit, _, _ = calculate_smart_ticket(selected_site, nationality, f_crowd)
 
-                st.markdown(f"""
-                <div class="forecast-result-box">
-                    <strong>Forecast for {selected_site} ({forecast_day}):</strong><br>
-                    🌡️ Weather: {f_weather}   |   {f_color} Crowd: {f_crowd}<br>
-                    💰 Estimated Ticket: <b>{f_price:.2f} {f_unit}</b>
-                </div>
-                """, unsafe_allow_html=True)
+                    st.markdown(f"""
+                    <div class="forecast-result-box">
+                        <strong>Forecast for {selected_site} ({forecast_day}):</strong><br>
+                        🌡️ Weather: {f_weather}   |   {f_color} Crowd: {f_crowd}<br>
+                        💰 Estimated Ticket: <b>{f_price:.2f} {f_unit}</b>
+                    </div>
+                    """, unsafe_allow_html=True)
 
             # Live Crowdsourcing
             st.markdown("---")
@@ -338,18 +345,24 @@ if app_mode == "1. Tourist Explorer (User)":
             st.subheader("📢 Help the Community: Report Live Conditions")
             report_col1, report_col2 = st.columns(2)
             with report_col1:
-                report_district = st.selectbox("I am currently in (District):", sorted(df['District'].unique()), key="report_dist")
+                report_district = st.selectbox("I am currently in (District):", sorted(df['District'].unique()), key="report_dist", index=None, placeholder="Select District...")
             with report_col2:
-                report_sites = df[df['District'] == report_district]['Site Name'].unique()
-                report_site = st.selectbox("I am currently visiting (Site):", sorted(report_sites), key="report_site")
+                report_sites = df[df['District'] == report_district]['Site Name'].unique() if report_district else []
+                report_site = st.selectbox("I am currently visiting (Site):", sorted(report_sites), key="report_site", index=None, placeholder="Select Site...")
             st.markdown("<br>", unsafe_allow_html=True)
             btn_col1, btn_col2 = st.columns(2)
             with btn_col1:
-                if st.button(f"🔴 It's Very Crowded at {report_site}!", key="btn_crowd"):
-                    st.toast("Thank you! Your report helps protect this heritage site.", icon="🙏")
+                if st.button(f"🔴 It's Very Crowded!", key="btn_crowd"):
+                    if report_site:
+                        st.toast("Thank you! Your report helps protect this heritage site.", icon="🙏")
+                    else:
+                        st.warning("Please select a site first!")
             with btn_col2:
-                if st.button(f"🟢 It's Peaceful & Quiet at {report_site}", key="btn_peace"):
-                    st.toast("Awesome! We've updated the status.", icon="✨")
+                if st.button(f"🟢 It's Peaceful & Quiet", key="btn_peace"):
+                    if report_site:
+                        st.toast("Awesome! We've updated the status.", icon="✨")
+                    else:
+                        st.warning("Please select a site first!")
             st.markdown('</div>', unsafe_allow_html=True)
 
             # Continuous Chatbot
