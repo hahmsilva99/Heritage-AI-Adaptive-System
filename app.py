@@ -11,42 +11,30 @@ import numpy as np
 # --- 1. Page Configuration ---
 st.set_page_config(page_title="Sri Lanka Heritage AI", page_icon="🏛️", layout="wide", initial_sidebar_state="expanded")
 
-# --- Custom CSS (UPDATED FOR ABSOLUTE BLACK TEXT) ---
+# --- Custom CSS (UPDATED FOR ABSOLUTE BLACK TEXT & CHAT UI) ---
 st.markdown("""
     <style>
     .main-header { font-size: 36px; font-weight: bold; color: #1F618D; text-align: center; }
     .stButton>button { width: 100%; border-radius: 8px; background-color: #239B56; color: white; font-weight: bold; padding: 10px; font-size: 18px;}
     .stButton>button:hover { background-color: #1D8348; }
     
-    /* Box Styles with Black Text Forced */
-    .alert-box { padding: 15px; border-radius: 10px; background-color: #FADBD8; border-left: 5px solid #E74C3C; margin-bottom: 20px; color: black !important; }
-    .alert-box * { color: black !important; }
+    .alert-box, .success-box, .live-data-box, .alt-card, .postpone-box, .crowd-box, .impact-box, .micro-zone-box, .forecast-box { 
+        color: black !important; 
+    }
+    .alert-box * , .success-box * , .live-data-box * , .alt-card * , .postpone-box * , .crowd-box * , .impact-box * , .micro-zone-box * , .forecast-box * { 
+        color: black !important; 
+    }
     
-    .success-box { padding: 15px; border-radius: 10px; background-color: #D5F5E3; border-left: 5px solid #2ECC71; margin-bottom: 20px; color: black !important; }
-    .success-box * { color: black !important; }
+    .alert-box { padding: 15px; border-radius: 10px; background-color: #FADBD8; border-left: 5px solid #E74C3C; margin-bottom: 20px; }
+    .success-box { padding: 15px; border-radius: 10px; background-color: #D5F5E3; border-left: 5px solid #2ECC71; margin-bottom: 20px; }
+    .live-data-box { padding: 15px; border-radius: 10px; background-color: #EBF5FB; border-left: 5px solid #3498DB; margin-bottom: 20px; }
+    .alt-card { border: 1px solid #D5DBDB; border-radius: 10px; padding: 15px; background-color: #F8F9F9; height: 100%; }
+    .postpone-box { background-color: #E8F8F5; padding: 20px; border-radius: 10px; border-left: 5px solid #1ABC9C; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .crowd-box { background-color: #FFF9C4; padding: 20px; border-radius: 10px; border-left: 5px solid #F1C40F; margin-top: 30px; margin-bottom: 20px; }
+    .impact-box { background-color: #EBF5FB; border: 2px dashed #28B463; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+    .micro-zone-box { background-color: #F5EEF8; padding: 15px; border-radius: 10px; border-left: 5px solid #8E44AD; margin-bottom: 20px; }
+    .forecast-box { background-color: #F4ECF7; padding: 20px; border-radius: 10px; border-left: 5px solid #9B59B6; margin-top: 20px; margin-bottom: 20px; }
     
-    .live-data-box { padding: 15px; border-radius: 10px; background-color: #EBF5FB; border-left: 5px solid #3498DB; margin-bottom: 20px; color: black !important; }
-    .live-data-box * { color: black !important; }
-    
-    .alt-card { border: 1px solid #D5DBDB; border-radius: 10px; padding: 15px; background-color: #F8F9F9; height: 100%; color: black !important; }
-    .alt-card * { color: black !important; }
-    
-    .postpone-box { background-color: #E8F8F5; padding: 20px; border-radius: 10px; border-left: 5px solid #1ABC9C; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); color: black !important; }
-    .postpone-box * { color: black !important; }
-    
-    .crowd-box { background-color: #FFF9C4; padding: 20px; border-radius: 10px; border-left: 5px solid #F1C40F; margin-top: 30px; margin-bottom: 20px; color: black !important; }
-    .crowd-box * { color: black !important; }
-    
-    .impact-box { background-color: #EBF5FB; border: 2px dashed #28B463; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); color: black !important; }
-    .impact-box * { color: black !important; }
-    
-    .micro-zone-box { background-color: #F5EEF8; padding: 15px; border-radius: 10px; border-left: 5px solid #8E44AD; margin-bottom: 20px; color: black !important; }
-    .micro-zone-box * { color: black !important; }
-    
-    .forecast-box { background-color: #F4ECF7; padding: 20px; border-radius: 10px; border-left: 5px solid #9B59B6; margin-top: 20px; margin-bottom: 20px; color: black !important; }
-    .forecast-box * { color: black !important; }
-    
-    /* 🔥 NEW: Forced Black Text for Forecast Result Box */
     .forecast-result-box { background-color: #FDFEFE; padding: 15px; border-radius: 8px; border: 1px solid #D2B4DE; color: black !important; }
     .forecast-result-box * { color: black !important; font-weight: bold; }
     
@@ -84,7 +72,7 @@ def train_ai_model():
 with st.spinner("Initializing Adaptive AI Model..."):
     df, ai_model, le_dict, feature_columns = train_ai_model()
 
-# --- Initialize Session State ---
+# --- Initialize Session State (ADDED CHAT HISTORY) ---
 if 'analyzed' not in st.session_state:
     st.session_state.analyzed = False
 if 'current_site' not in st.session_state:
@@ -93,6 +81,8 @@ if 'accepted_alt' not in st.session_state:
     st.session_state.accepted_alt = False
 if 'accepted_alt_name' not in st.session_state:
     st.session_state.accepted_alt_name = ""
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
 
 # --- 3. Sidebar ---
 st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Flag_of_Sri_Lanka.svg/1200px-Flag_of_Sri_Lanka.svg.png", width=100)
@@ -116,9 +106,11 @@ if app_mode == "1. Tourist Explorer (User)":
     with col3:
         target_audience = st.selectbox("3. Traveler Type:", df['Target_Audience'].unique(), key="dest_type")
 
+    # If user changes site, clear everything including chat memory
     if st.session_state.current_site != selected_site:
         st.session_state.analyzed = False
         st.session_state.accepted_alt = False
+        st.session_state.chat_history = [] # <--- Clear Memory for new site!
         st.session_state.current_site = selected_site
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -173,6 +165,7 @@ if app_mode == "1. Tourist Explorer (User)":
             if st.button("🔄 Plan Another Trip"):
                 st.session_state.analyzed = False
                 st.session_state.accepted_alt = False
+                st.session_state.chat_history = []
                 st.rerun()
 
         else:
@@ -244,9 +237,7 @@ if app_mode == "1. Tourist Explorer (User)":
                                 
                             st.markdown('</div>', unsafe_allow_html=True)
 
-            # ==========================================
-            # 🔮 FIXED: Predictive Forecasting Box Text Color
-            # ==========================================
+            # Predictive Forecasting
             st.markdown("---")
             st.markdown(f"""
             <div class="forecast-box">
@@ -264,14 +255,12 @@ if app_mode == "1. Tourist Explorer (User)":
                 f_crowd = random.choice(["Low", "Medium", "High"])
                 f_color = "🔴" if f_crowd == "High" else "🟠" if f_crowd == "Medium" else "🟢"
 
-                # New strict CSS class applied here to force black text
                 st.markdown(f"""
                 <div class="forecast-result-box">
                     Forecast for {selected_site} ({forecast_day}):<br><br>
                     🌡️ Weather: {f_weather}   |   {f_color} Expected Crowd: {f_crowd}
                 </div>
                 """, unsafe_allow_html=True)
-            # ==========================================
 
             # Live Crowdsourcing
             st.markdown("---")
@@ -293,13 +282,68 @@ if app_mode == "1. Tourist Explorer (User)":
                     st.toast("Awesome! We've updated the status.", icon="✨")
             st.markdown('</div>', unsafe_allow_html=True)
 
-            # Chatbot
-            with st.expander("💬 Ask AI Heritage Guide"):
-                chat = st.text_input("Ask about the history or status of a site:", key="chat_input")
-                if chat: 
-                    with st.spinner("AI is thinking..."):
-                        time.sleep(1)
-                        st.info(f"**AI:** Great question about '{chat}'! The sites in {selected_district} have immense cultural value. Visiting during off-peak hours helps preserve their structure.")
+            # ==========================================
+            # 🤖 CONTINUOUS CONVERSATIONAL CHATBOT UI
+            # ==========================================
+            st.markdown("---")
+            st.subheader(f"💬 Live AI Heritage Guide: {selected_site}")
+            st.write("I am your smart assistant! Ask me multiple questions about the location, history, dress code, or tickets.")
+            
+            # 1. Display existing chat history
+            for message in st.session_state.chat_history:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+            # 2. Accept new user input (Fixed at the bottom of this section)
+            if user_question := st.chat_input("Type your question here... (e.g. 'history', 'ticket', 'dress')"):
+                
+                # Add user message to state and display immediately
+                st.session_state.chat_history.append({"role": "user", "content": user_question})
+                with st.chat_message("user"):
+                    st.markdown(user_question)
+
+                # 3. Process AI Response
+                with st.chat_message("assistant"):
+                    message_placeholder = st.empty()
+                    message_placeholder.markdown("▌") # Blinking cursor effect
+                    time.sleep(0.5) 
+                    
+                    q = user_question.lower()
+                    ai_response = ""
+                    
+                    # NLP Logic Tree
+                    if any(word in q for word in ["dress", "wear", "clothes", "rule", "attire"]):
+                        if any(temple in selected_site.lower() for temple in ["temple", "stupa", "dalada", "ruwanweli", "vihara", "bodhi"]):
+                            ai_response = f"For **{selected_site}**, conservative attire is strictly required. Please wear clothes that cover your shoulders and knees. White color is highly recommended."
+                        else:
+                            ai_response = f"For **{selected_site}**, wear comfortable, breathable clothing and good walking shoes. Since it's outdoors, don't forget a hat and sunscreen!"
+                    
+                    elif any(word in q for word in ["ticket", "price", "cost", "fee", "pay", "money"]):
+                        if target_audience == "Foreign Tourists":
+                            ai_response = f"As a Foreign Tourist, the entrance fee for **{selected_site}** usually ranges from $15 to $30 USD. SAARC citizens may be eligible for a discount. Always carry your passport."
+                        else:
+                            ai_response = f"As a Local Tourist, the entrance to **{selected_site}** is generally free, or requires a very minimal maintenance fee (around Rs. 50 - 200)."
+                            
+                    elif any(word in q for word in ["history", "built", "king", "old", "create", "who"]):
+                        if "Sigiriya" in selected_site:
+                            ai_response = f"**{selected_site}** was built by King Kashyapa (477 – 495 CE) as his new capital. It is world-renowned for its frescoes and advanced water gardens."
+                        elif "Ruwanweli" in selected_site:
+                            ai_response = f"**{selected_site}** was built by King Dutugemunu c. 140 B.C. It is one of the world's tallest ancient monuments and a marvel of engineering."
+                        elif "Tooth" in selected_site or "Dalada" in selected_site:
+                            ai_response = f"**{selected_site}** houses the sacred relic of the tooth of the Buddha. The present temple structures were primarily built by the Kandyan Kings."
+                        else:
+                            ai_response = f"**{selected_site}** holds deep historical significance in the {selected_district} district, representing Sri Lanka's rich architectural and cultural heritage."
+                            
+                    elif any(word in q for word in ["hello", "hi", "hey"]):
+                        ai_response = f"Hello there! I am ready to guide you around **{selected_site}**. What would you like to know?"
+                        
+                    else:
+                        ai_response = f"That's a great question! While I don't have the exact data for '{user_question}' right now, please remember that **{selected_site}** is currently facing {st.session_state.live_overcrowding} crowds. Stay safe!"
+                        
+                    message_placeholder.markdown(ai_response)
+                
+                # Save AI response to memory
+                st.session_state.chat_history.append({"role": "assistant", "content": ai_response})
 
 # --- 5. Admin Dashboard ---
 elif app_mode == "2. Admin Dashboard (Panel)":
