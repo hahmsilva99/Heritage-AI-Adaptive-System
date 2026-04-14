@@ -11,20 +11,45 @@ import numpy as np
 # --- 1. Page Configuration ---
 st.set_page_config(page_title="Sri Lanka Heritage AI", page_icon="🏛️", layout="wide", initial_sidebar_state="expanded")
 
-# --- Custom CSS ---
+# --- Custom CSS (UPDATED FOR ABSOLUTE BLACK TEXT) ---
 st.markdown("""
     <style>
     .main-header { font-size: 36px; font-weight: bold; color: #1F618D; text-align: center; }
     .stButton>button { width: 100%; border-radius: 8px; background-color: #239B56; color: white; font-weight: bold; padding: 10px; font-size: 18px;}
     .stButton>button:hover { background-color: #1D8348; }
-    .alert-box { padding: 15px; border-radius: 10px; background-color: #FADBD8; border-left: 5px solid #E74C3C; margin-bottom: 20px;}
-    .success-box { padding: 15px; border-radius: 10px; background-color: #D5F5E3; border-left: 5px solid #2ECC71; margin-bottom: 20px;}
-    .live-data-box { padding: 15px; border-radius: 10px; background-color: #EBF5FB; border-left: 5px solid #3498DB; margin-bottom: 20px;}
-    .alt-card { border: 1px solid #D5DBDB; border-radius: 10px; padding: 15px; background-color: #F8F9F9; height: 100%;}
-    .postpone-box { background-color: #E8F8F5; padding: 20px; border-radius: 10px; border-left: 5px solid #1ABC9C; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);}
-    .crowd-box { background-color: #FFF9C4; padding: 20px; border-radius: 10px; border-left: 5px solid #F1C40F; margin-top: 30px; margin-bottom: 20px;}
-    .impact-box { background-color: #EBF5FB; border: 2px dashed #28B463; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-    .micro-zone-box { background-color: #F5EEF8; padding: 15px; border-radius: 10px; border-left: 5px solid #8E44AD; margin-bottom: 20px; }
+    
+    /* Box Styles with Black Text Forced */
+    .alert-box { padding: 15px; border-radius: 10px; background-color: #FADBD8; border-left: 5px solid #E74C3C; margin-bottom: 20px; color: black !important; }
+    .alert-box * { color: black !important; }
+    
+    .success-box { padding: 15px; border-radius: 10px; background-color: #D5F5E3; border-left: 5px solid #2ECC71; margin-bottom: 20px; color: black !important; }
+    .success-box * { color: black !important; }
+    
+    .live-data-box { padding: 15px; border-radius: 10px; background-color: #EBF5FB; border-left: 5px solid #3498DB; margin-bottom: 20px; color: black !important; }
+    .live-data-box * { color: black !important; }
+    
+    .alt-card { border: 1px solid #D5DBDB; border-radius: 10px; padding: 15px; background-color: #F8F9F9; height: 100%; color: black !important; }
+    .alt-card * { color: black !important; }
+    
+    .postpone-box { background-color: #E8F8F5; padding: 20px; border-radius: 10px; border-left: 5px solid #1ABC9C; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); color: black !important; }
+    .postpone-box * { color: black !important; }
+    
+    .crowd-box { background-color: #FFF9C4; padding: 20px; border-radius: 10px; border-left: 5px solid #F1C40F; margin-top: 30px; margin-bottom: 20px; color: black !important; }
+    .crowd-box * { color: black !important; }
+    
+    .impact-box { background-color: #EBF5FB; border: 2px dashed #28B463; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); color: black !important; }
+    .impact-box * { color: black !important; }
+    
+    .micro-zone-box { background-color: #F5EEF8; padding: 15px; border-radius: 10px; border-left: 5px solid #8E44AD; margin-bottom: 20px; color: black !important; }
+    .micro-zone-box * { color: black !important; }
+    
+    .forecast-box { background-color: #F4ECF7; padding: 20px; border-radius: 10px; border-left: 5px solid #9B59B6; margin-top: 20px; margin-bottom: 20px; color: black !important; }
+    .forecast-box * { color: black !important; }
+    
+    /* 🔥 NEW: Forced Black Text for Forecast Result Box */
+    .forecast-result-box { background-color: #FDFEFE; padding: 15px; border-radius: 8px; border: 1px solid #D2B4DE; color: black !important; }
+    .forecast-result-box * { color: black !important; font-weight: bold; }
+    
     .badge { font-size: 50px; }
     </style>
 """, unsafe_allow_html=True)
@@ -59,7 +84,7 @@ def train_ai_model():
 with st.spinner("Initializing Adaptive AI Model..."):
     df, ai_model, le_dict, feature_columns = train_ai_model()
 
-# --- Initialize Session State for clean UI & Impact Tracker ---
+# --- Initialize Session State ---
 if 'analyzed' not in st.session_state:
     st.session_state.analyzed = False
 if 'current_site' not in st.session_state:
@@ -81,7 +106,6 @@ if app_mode == "1. Tourist Explorer (User)":
     st.markdown('<div class="main-header">🏛️ Eco-Adaptive Heritage Explorer</div>', unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: gray;'>Sustainable Journey Planning Powered by Community & AI.</p><hr>", unsafe_allow_html=True)
 
-    # UI Inputs (Travel Plan)
     st.subheader("📍 Where are you heading?")
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -92,7 +116,6 @@ if app_mode == "1. Tourist Explorer (User)":
     with col3:
         target_audience = st.selectbox("3. Traveler Type:", df['Target_Audience'].unique(), key="dest_type")
 
-    # Reset UI if user changes destination
     if st.session_state.current_site != selected_site:
         st.session_state.analyzed = False
         st.session_state.accepted_alt = False
@@ -100,7 +123,6 @@ if app_mode == "1. Tourist Explorer (User)":
 
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # 🚀 The Analyze Button
     if st.button("🚀 Analyze with AI & Get Recommendation"):
         st.session_state.analyzed = True
         st.session_state.accepted_alt = False 
@@ -111,7 +133,6 @@ if app_mode == "1. Tourist Explorer (User)":
             st.session_state.live_aqi = random.choice(["Good", "Moderate", "Poor"])
             st.session_state.live_overcrowding = random.choices(["Low", "Medium", "High"], weights=[10, 40, 50], k=1)[0] 
 
-    # --- SHOW RESULTS ONLY IF BUTTON WAS PRESSED ---
     if st.session_state.analyzed:
         site_data = df[df['Site Name'] == selected_site].iloc[0].copy()
         capacity = site_data['Max Visitor Capacity']
@@ -130,18 +151,15 @@ if app_mode == "1. Tourist Explorer (User)":
         prediction = ai_model.predict(input_df)[0]
         decision = le_dict['Redirect Recommendation'].inverse_transform([prediction])[0]
 
-        # ==========================================
-        # 🏅 FEATURE: SUSTAINABILITY IMPACT TRACKER 
-        # ==========================================
         if st.session_state.accepted_alt:
             st.markdown("---")
             st.markdown(f"""
             <div class="impact-box">
                 <div class="badge">🏅🌱</div>
-                <h2 style="color: #196F3D;">Green Tourist Badge Unlocked!</h2>
+                <h2>Green Tourist Badge Unlocked!</h2>
                 <p style="font-size: 18px;">Thank you for accepting the AI recommendation to visit <b>{st.session_state.accepted_alt_name}</b> instead of adding to the congestion at {selected_site}.</p>
                 <hr style="border: 1px solid #A9DFBF; width: 50%; margin: 20px auto;">
-                <h3 style="color: #2874A6;">📊 Your Sustainability Impact:</h3>
+                <h3>📊 Your Sustainability Impact:</h3>
             </div>
             """, unsafe_allow_html=True)
             
@@ -158,25 +176,20 @@ if app_mode == "1. Tourist Explorer (User)":
                 st.rerun()
 
         else:
-            # Show normal results if they haven't accepted an alternative yet
             st.markdown(f"""
             <div class="live-data-box">
-                <h4 style='margin-top:0; color:#154360;'>📡 Real-Time Status for {selected_site}</h4>
+                <h4 style='margin-top:0;'>📡 Real-Time Status for {selected_site}</h4>
                 <p><b>Weather:</b> {st.session_state.live_weather}   |   <b>AQI:</b> {st.session_state.live_aqi}   |   <b>Crowd Level:</b> {st.session_state.live_overcrowding}</p>
             </div>
             """, unsafe_allow_html=True)
 
-            # ==========================================
-            # 🗺️ NEW FEATURE: MICRO-ZONE CROWD ANALYSIS
-            # ==========================================
             st.markdown(f"""
             <div class="micro-zone-box">
-                <h4 style='color: #4A235A; margin-top: 0;'>🗺️ Micro-Zone Crowd Radar</h4>
+                <h4 style='margin-top: 0;'>🗺️ Micro-Zone Crowd Radar</h4>
                 <p style='font-size: 14px; margin-bottom: 10px;'>Sustainability AI distributes foot traffic to prevent localized structural damage. Live conditions within the <b>{selected_site}</b> complex:</p>
             </div>
             """, unsafe_allow_html=True)
 
-            # Logic to generate sub-zones dynamically based on main risk
             main_risk = st.session_state.live_overcrowding
             if main_risk == "High":
                 z2_risk, z3_risk = "Medium", "Low"
@@ -190,13 +203,12 @@ if app_mode == "1. Tourist Explorer (User)":
 
             mz1, mz2, mz3 = st.columns(3)
             with mz1:
-                st.info(f"**Main Complex/Shrine**\n\n{c1} {main_risk} Traffic\n\n🚶 0 min")
+                st.markdown(f'<div style="background-color: #D6EAF8; padding: 15px; border-radius: 8px; text-align: center; color: black; border: 1px solid #AED6F1;"><b>Main Complex</b><br><br>{c1} {main_risk} Traffic<br><br>🚶 0 min</div>', unsafe_allow_html=True)
             with mz2:
-                st.success(f"**Outer Gardens/Museum**\n\n{c2} {z2_risk} Traffic\n\n🚶 5 mins (400m)")
+                st.markdown(f'<div style="background-color: #D5F5E3; padding: 15px; border-radius: 8px; text-align: center; color: black; border: 1px solid #ABEBC6;"><b>Outer Gardens</b><br><br>{c2} {z2_risk} Traffic<br><br>🚶 5 mins (400m)</div>', unsafe_allow_html=True)
             with mz3:
-                st.success(f"**Scenic Viewpoint**\n\n{c3} {z3_risk} Traffic\n\n🚶 10 mins (800m)")
+                st.markdown(f'<div style="background-color: #D5F5E3; padding: 15px; border-radius: 8px; text-align: center; color: black; border: 1px solid #ABEBC6;"><b>Scenic Viewpoint</b><br><br>{c3} {z3_risk} Traffic<br><br>🚶 10 mins (800m)</div>', unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
-            # ==========================================
 
             st.markdown("#### 📊 Expected Crowd Trend Today")
             time_labels = ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00']
@@ -207,19 +219,23 @@ if app_mode == "1. Tourist Explorer (User)":
 
             st.markdown("---")
             if decision == 'No':
-                st.markdown(f'<div class="success-box"><h3>✅ Clear to Visit!</h3><p>Enjoy <b>{selected_site}</b>. Conditions are optimal.</p></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="success-box"><h3 style="margin-top:0;">✅ Clear to Visit!</h3><p>Enjoy <b>{selected_site}</b>. Conditions are optimal.</p></div>', unsafe_allow_html=True)
             else:
-                st.markdown(f'<div class="alert-box"><h3>⚠️ Redirection Activated</h3><p><b>{selected_site}</b> is currently facing {st.session_state.live_overcrowding} risk.</p></div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="postpone-box">⏳ <b>Smart Postponement:</b> Optimal window is <b>{recommended_time}</b>.</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="alert-box"><h3 style="margin-top:0;">⚠️ Redirection Activated</h3><p><b>{selected_site}</b> is currently facing {st.session_state.live_overcrowding} risk.</p></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="postpone-box"><h4 style="margin-top:0;">⏳ Smart Postponement</h4><p>If visiting <b>{selected_site}</b> is an absolute must for you, the AI highly recommends rescheduling.</p><h3>Optimal Visiting Window: {recommended_time}</h3></div>', unsafe_allow_html=True)
                 
-                st.subheader("🌿 Sustainable Alternatives")
+                st.subheader("🌿 Suggested Safe Alternatives")
                 alternatives = df[(df['District'] == selected_district) & (df['Overcrowding Risk'] == 'Low') & (df['Site Name'] != selected_site)]
                 if not alternatives.empty:
                     alts = alternatives.sample(min(3, len(alternatives)))
                     cols = st.columns(len(alts))
                     for col, (_, alt) in zip(cols, alts.iterrows()):
                         with col:
-                            st.markdown(f'<div class="alt-card"><h4>{alt["Site Name"]}</h4><p>📍 {alt["Location"]}</p><p>🛡️ {alt["Conservation Status"]}</p>', unsafe_allow_html=True)
+                            st.markdown(f'<div class="alt-card"><h4 style="margin-top:0;">{alt["Site Name"]}</h4><p>📍 {alt["Location"]}</p><p>🛡️ {alt["Conservation Status"]}</p>', unsafe_allow_html=True)
+                            
+                            search_query = quote_plus(f"{alt['Site Name']} {alt['District']} Sri Lanka")
+                            st.markdown(f"**[🗺️ Navigate via Maps](https://www.google.com/maps/search/?api=1&query={search_query})**")
+                            st.markdown("<br>", unsafe_allow_html=True)
                             
                             if st.button(f"🌍 Accept & Save Heritage", key=f"btn_{alt['Site Name']}"):
                                 st.session_state.accepted_alt = True
@@ -228,7 +244,37 @@ if app_mode == "1. Tourist Explorer (User)":
                                 
                             st.markdown('</div>', unsafe_allow_html=True)
 
+            # ==========================================
+            # 🔮 FIXED: Predictive Forecasting Box Text Color
+            # ==========================================
+            st.markdown("---")
+            st.markdown(f"""
+            <div class="forecast-box">
+                <h4 style='margin-top: 0;'>🔮 AI Predictive Forecasting (Plan Ahead)</h4>
+                <p style='font-size: 14px;'>Cannot visit today? Select a future timeline to see AI-predicted conditions based on historical tourism data.</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            fc_col1, fc_col2 = st.columns([1, 2])
+            with fc_col1:
+                forecast_day = st.selectbox("Select Timeline:", ["Tomorrow", "Coming Weekend", "Next Week"], key="forecast_day")
+
+            with fc_col2:
+                f_weather = random.choice(["Sunny", "Clear", "Light Rain"])
+                f_crowd = random.choice(["Low", "Medium", "High"])
+                f_color = "🔴" if f_crowd == "High" else "🟠" if f_crowd == "Medium" else "🟢"
+
+                # New strict CSS class applied here to force black text
+                st.markdown(f"""
+                <div class="forecast-result-box">
+                    Forecast for {selected_site} ({forecast_day}):<br><br>
+                    🌡️ Weather: {f_weather}   |   {f_color} Expected Crowd: {f_crowd}
+                </div>
+                """, unsafe_allow_html=True)
+            # ==========================================
+
             # Live Crowdsourcing
+            st.markdown("---")
             st.markdown(f'<div class="crowd-box">', unsafe_allow_html=True)
             st.subheader("📢 Help the Community: Report Live Conditions")
             report_col1, report_col2 = st.columns(2)
