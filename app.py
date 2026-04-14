@@ -24,6 +24,7 @@ st.markdown("""
     .postpone-box { background-color: #E8F8F5; padding: 20px; border-radius: 10px; border-left: 5px solid #1ABC9C; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);}
     .crowd-box { background-color: #FFF9C4; padding: 20px; border-radius: 10px; border-left: 5px solid #F1C40F; margin-top: 30px; margin-bottom: 20px;}
     .impact-box { background-color: #EBF5FB; border: 2px dashed #28B463; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+    .micro-zone-box { background-color: #F5EEF8; padding: 15px; border-radius: 10px; border-left: 5px solid #8E44AD; margin-bottom: 20px; }
     .badge { font-size: 50px; }
     </style>
 """, unsafe_allow_html=True)
@@ -102,13 +103,12 @@ if app_mode == "1. Tourist Explorer (User)":
     # 🚀 The Analyze Button
     if st.button("🚀 Analyze with AI & Get Recommendation"):
         st.session_state.analyzed = True
-        st.session_state.accepted_alt = False # Reset badge if analyzing again
+        st.session_state.accepted_alt = False 
         
         with st.spinner("🛰️ Fetching Live Satellite Weather & Crowd Sensor Data..."):
             time.sleep(1.5) 
             st.session_state.live_weather = random.choice(["Sunny", "Cloudy", "Rainy", "Clear"])
             st.session_state.live_aqi = random.choice(["Good", "Moderate", "Poor"])
-            # Force high/medium more often to show the redirect feature easily
             st.session_state.live_overcrowding = random.choices(["Low", "Medium", "High"], weights=[10, 40, 50], k=1)[0] 
 
     # --- SHOW RESULTS ONLY IF BUTTON WAS PRESSED ---
@@ -131,7 +131,7 @@ if app_mode == "1. Tourist Explorer (User)":
         decision = le_dict['Redirect Recommendation'].inverse_transform([prediction])[0]
 
         # ==========================================
-        # 🔥 NEW FEATURE: SUSTAINABILITY IMPACT TRACKER 
+        # 🏅 FEATURE: SUSTAINABILITY IMPACT TRACKER 
         # ==========================================
         if st.session_state.accepted_alt:
             st.markdown("---")
@@ -145,7 +145,6 @@ if app_mode == "1. Tourist Explorer (User)":
             </div>
             """, unsafe_allow_html=True)
             
-            # Show Metrics
             m1, m2, m3 = st.columns(3)
             m1.metric("Heritage Stress Reduced", "85%", "+15% from avg")
             m2.metric("Sustainable Reward Points", "+150 XP", "Top 10% today")
@@ -167,11 +166,42 @@ if app_mode == "1. Tourist Explorer (User)":
             </div>
             """, unsafe_allow_html=True)
 
+            # ==========================================
+            # 🗺️ NEW FEATURE: MICRO-ZONE CROWD ANALYSIS
+            # ==========================================
+            st.markdown(f"""
+            <div class="micro-zone-box">
+                <h4 style='color: #4A235A; margin-top: 0;'>🗺️ Micro-Zone Crowd Radar</h4>
+                <p style='font-size: 14px; margin-bottom: 10px;'>Sustainability AI distributes foot traffic to prevent localized structural damage. Live conditions within the <b>{selected_site}</b> complex:</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Logic to generate sub-zones dynamically based on main risk
+            main_risk = st.session_state.live_overcrowding
+            if main_risk == "High":
+                z2_risk, z3_risk = "Medium", "Low"
+                c1, c2, c3 = "🔴", "🟠", "🟢"
+            elif main_risk == "Medium":
+                z2_risk, z3_risk = "Low", "Low"
+                c1, c2, c3 = "🟠", "🟢", "🟢"
+            else:
+                z2_risk, z3_risk = "Low", "Low"
+                c1, c2, c3 = "🟢", "🟢", "🟢"
+
+            mz1, mz2, mz3 = st.columns(3)
+            with mz1:
+                st.info(f"**Main Complex/Shrine**\n\n{c1} {main_risk} Traffic\n\n🚶 0 min")
+            with mz2:
+                st.success(f"**Outer Gardens/Museum**\n\n{c2} {z2_risk} Traffic\n\n🚶 5 mins (400m)")
+            with mz3:
+                st.success(f"**Scenic Viewpoint**\n\n{c3} {z3_risk} Traffic\n\n🚶 10 mins (800m)")
+            st.markdown("<br>", unsafe_allow_html=True)
+            # ==========================================
+
             st.markdown("#### 📊 Expected Crowd Trend Today")
             time_labels = ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00']
             crowd_map = {"High": [20, 50, 95, 100, 85, 60, 30], "Medium": [15, 40, 70, 75, 60, 45, 20], "Low": [10, 20, 40, 45, 35, 25, 10]}
             colors = {"High": "#E74C3C", "Medium": "#F39C12", "Low": "#2ECC71"}
-            
             trend_df = pd.DataFrame({'Time': time_labels, 'Density (%)': crowd_map[st.session_state.live_overcrowding]}).set_index('Time')
             st.area_chart(trend_df, color=colors[st.session_state.live_overcrowding], height=180)
 
@@ -191,15 +221,14 @@ if app_mode == "1. Tourist Explorer (User)":
                         with col:
                             st.markdown(f'<div class="alt-card"><h4>{alt["Site Name"]}</h4><p>📍 {alt["Location"]}</p><p>🛡️ {alt["Conservation Status"]}</p>', unsafe_allow_html=True)
                             
-                            # The Accept Button that triggers the Sustainability Tracker!
                             if st.button(f"🌍 Accept & Save Heritage", key=f"btn_{alt['Site Name']}"):
                                 st.session_state.accepted_alt = True
                                 st.session_state.accepted_alt_name = alt['Site Name']
-                                st.rerun() # Refresh page immediately to show badge
+                                st.rerun() 
                                 
                             st.markdown('</div>', unsafe_allow_html=True)
 
-            # Crowdsourcing and Chatbot (Only show if they haven't accepted an alternative yet)
+            # Live Crowdsourcing
             st.markdown(f'<div class="crowd-box">', unsafe_allow_html=True)
             st.subheader("📢 Help the Community: Report Live Conditions")
             report_col1, report_col2 = st.columns(2)
@@ -218,6 +247,7 @@ if app_mode == "1. Tourist Explorer (User)":
                     st.toast("Awesome! We've updated the status.", icon="✨")
             st.markdown('</div>', unsafe_allow_html=True)
 
+            # Chatbot
             with st.expander("💬 Ask AI Heritage Guide"):
                 chat = st.text_input("Ask about the history or status of a site:", key="chat_input")
                 if chat: 
