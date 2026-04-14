@@ -3,27 +3,27 @@ import pandas as pd
 import xgboost as xgb
 from sklearn.preprocessing import LabelEncoder
 from imblearn.over_sampling import SMOTE
+from sklearn.metrics import roc_curve, auc
 import time
 import random
 from urllib.parse import quote_plus
 import numpy as np
 
+# 🔥 IMPORTING THE NEW ADMIN DASHBOARD MODULE
+from admin_dashboard import render_admin_dashboard 
+
 # --- 1. Page Configuration ---
 st.set_page_config(page_title="Sri Lanka Heritage AI", page_icon="🏛️", layout="wide", initial_sidebar_state="expanded")
 
-# --- Custom CSS (UPDATED FOR ABSOLUTE BLACK TEXT & CHAT UI) ---
+# --- Custom CSS ---
 st.markdown("""
     <style>
     .main-header { font-size: 36px; font-weight: bold; color: #1F618D; text-align: center; }
     .stButton>button { width: 100%; border-radius: 8px; background-color: #239B56; color: white; font-weight: bold; padding: 10px; font-size: 18px;}
     .stButton>button:hover { background-color: #1D8348; }
     
-    .alert-box, .success-box, .live-data-box, .alt-card, .postpone-box, .crowd-box, .impact-box, .micro-zone-box, .forecast-box { 
-        color: black !important; 
-    }
-    .alert-box * , .success-box * , .live-data-box * , .alt-card * , .postpone-box * , .crowd-box * , .impact-box * , .micro-zone-box * , .forecast-box * { 
-        color: black !important; 
-    }
+    .alert-box, .success-box, .live-data-box, .alt-card, .postpone-box, .crowd-box, .impact-box, .micro-zone-box, .forecast-box, .dash-metric-box { color: black !important; }
+    .alert-box * , .success-box * , .live-data-box * , .alt-card * , .postpone-box * , .crowd-box * , .impact-box * , .micro-zone-box * , .forecast-box * , .dash-metric-box * { color: black !important; }
     
     .alert-box { padding: 15px; border-radius: 10px; background-color: #FADBD8; border-left: 5px solid #E74C3C; margin-bottom: 20px; }
     .success-box { padding: 15px; border-radius: 10px; background-color: #D5F5E3; border-left: 5px solid #2ECC71; margin-bottom: 20px; }
@@ -34,10 +34,13 @@ st.markdown("""
     .impact-box { background-color: #EBF5FB; border: 2px dashed #28B463; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
     .micro-zone-box { background-color: #F5EEF8; padding: 15px; border-radius: 10px; border-left: 5px solid #8E44AD; margin-bottom: 20px; }
     .forecast-box { background-color: #F4ECF7; padding: 20px; border-radius: 10px; border-left: 5px solid #9B59B6; margin-top: 20px; margin-bottom: 20px; }
-    
     .forecast-result-box { background-color: #FDFEFE; padding: 15px; border-radius: 8px; border: 1px solid #D2B4DE; color: black !important; }
     .forecast-result-box * { color: black !important; font-weight: bold; }
+    .chat-response-box { background-color: #EBEDEF; padding: 15px; border-radius: 8px; border-left: 5px solid #34495E; color: black !important; margin-top: 10px;}
     
+    .dash-metric-box { background-color: white; padding: 20px; border-radius: 10px; border-top: 5px solid #3498DB; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px;}
+    .dash-metric-value { font-size: 36px; font-weight: bold; color: #2C3E50 !important; margin: 10px 0;}
+    .dash-metric-title { font-size: 16px; color: #7F8C8D !important; text-transform: uppercase;}
     .badge { font-size: 50px; }
     </style>
 """, unsafe_allow_html=True)
@@ -64,15 +67,25 @@ def train_ai_model():
 
     smote = SMOTE(random_state=42)
     X_res, y_res = smote.fit_resample(X, y)
-    model = xgb.XGBClassifier(use_label_encoder=False, eval_metric='logloss', random_state=42)
-    model.fit(X_res, y_res)
     
-    return df, model, le_dict, X.columns
+    # Train test split for ROC curve evaluation
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.2, random_state=42)
+
+    model = xgb.XGBClassifier(use_label_encoder=False, eval_metric='logloss', random_state=42)
+    model.fit(X_train, y_train)
+    
+    # Generate ROC Data
+    y_prob = model.predict_proba(X_test)[:, 1]
+    fpr, tpr, _ = roc_curve(y_test, y_prob)
+    roc_auc = auc(fpr, tpr)
+    
+    return df, model, le_dict, X.columns, fpr, tpr, roc_auc
 
 with st.spinner("Initializing Adaptive AI Model..."):
-    df, ai_model, le_dict, feature_columns = train_ai_model()
+    df, ai_model, le_dict, feature_columns, fpr, tpr, roc_auc = train_ai_model()
 
-# --- Initialize Session State (ADDED CHAT HISTORY) ---
+# --- Initialize Session State ---
 if 'analyzed' not in st.session_state:
     st.session_state.analyzed = False
 if 'current_site' not in st.session_state:
@@ -83,19 +96,22 @@ if 'accepted_alt_name' not in st.session_state:
     st.session_state.accepted_alt_name = ""
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
+if 'total_users' not in st.session_state:
+    st.session_state.total_users = 1245
+if 'total_redirects' not in st.session_state:
+    st.session_state.total_redirects = 412
 
 # --- 3. Sidebar ---
 st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Flag_of_Sri_Lanka.svg/1200px-Flag_of_Sri_Lanka.svg.png", width=100)
 st.sidebar.title("Navigation 🧭")
-
-# 🔥 CHANGED HERE: Radio button changed to a Dropdown (selectbox)
 app_mode = st.sidebar.selectbox("Select View:", ["1. Tourist Explorer (User)", "2. Admin Dashboard (Panel)"])
-
 st.sidebar.markdown("---")
 st.sidebar.info("🤖 **Status: AI Online**\n\nModel Accuracy: 96.88%\n\n*Optimizing for Heritage Conservation.*")
 
-# --- 4. Main App: Tourist Explorer ---
+# --- 4. Main App: Routing ---
 if app_mode == "1. Tourist Explorer (User)":
+    
+    # (TOURIST VIEW CODE REMAINS EXACTLY THE SAME)
     st.markdown('<div class="main-header">🏛️ Eco-Adaptive Heritage Explorer</div>', unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: gray;'>Sustainable Journey Planning Powered by Community & AI.</p><hr>", unsafe_allow_html=True)
 
@@ -109,11 +125,10 @@ if app_mode == "1. Tourist Explorer (User)":
     with col3:
         target_audience = st.selectbox("3. Traveler Type:", df['Target_Audience'].unique(), key="dest_type")
 
-    # If user changes site, clear everything including chat memory
     if st.session_state.current_site != selected_site:
         st.session_state.analyzed = False
         st.session_state.accepted_alt = False
-        st.session_state.chat_history = [] # <--- Clear Memory for new site!
+        st.session_state.chat_history = [] 
         st.session_state.current_site = selected_site
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -121,6 +136,7 @@ if app_mode == "1. Tourist Explorer (User)":
     if st.button("🚀 Analyze with AI & Get Recommendation"):
         st.session_state.analyzed = True
         st.session_state.accepted_alt = False 
+        st.session_state.total_users += 1
         
         with st.spinner("🛰️ Fetching Live Satellite Weather & Crowd Sensor Data..."):
             time.sleep(1.5) 
@@ -236,6 +252,7 @@ if app_mode == "1. Tourist Explorer (User)":
                             if st.button(f"🌍 Accept & Save Heritage", key=f"btn_{alt['Site Name']}"):
                                 st.session_state.accepted_alt = True
                                 st.session_state.accepted_alt_name = alt['Site Name']
+                                st.session_state.total_redirects += 1
                                 st.rerun() 
                                 
                             st.markdown('</div>', unsafe_allow_html=True)
@@ -285,48 +302,37 @@ if app_mode == "1. Tourist Explorer (User)":
                     st.toast("Awesome! We've updated the status.", icon="✨")
             st.markdown('</div>', unsafe_allow_html=True)
 
-            # ==========================================
-            # 🤖 CONTINUOUS CONVERSATIONAL CHATBOT UI
-            # ==========================================
+            # Continuous Chatbot
             st.markdown("---")
             st.subheader(f"💬 Live AI Heritage Guide: {selected_site}")
             st.write("I am your smart assistant! Ask me multiple questions about the location, history, dress code, or tickets.")
             
-            # 1. Display existing chat history
             for message in st.session_state.chat_history:
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
 
-            # 2. Accept new user input (Fixed at the bottom of this section)
             if user_question := st.chat_input("Type your question here... (e.g. 'history', 'ticket', 'dress')"):
-                
-                # Add user message to state and display immediately
                 st.session_state.chat_history.append({"role": "user", "content": user_question})
                 with st.chat_message("user"):
                     st.markdown(user_question)
 
-                # 3. Process AI Response
                 with st.chat_message("assistant"):
                     message_placeholder = st.empty()
-                    message_placeholder.markdown("▌") # Blinking cursor effect
+                    message_placeholder.markdown("▌") 
                     time.sleep(0.5) 
                     
                     q = user_question.lower()
                     ai_response = ""
-                    
-                    # NLP Logic Tree
                     if any(word in q for word in ["dress", "wear", "clothes", "rule", "attire"]):
                         if any(temple in selected_site.lower() for temple in ["temple", "stupa", "dalada", "ruwanweli", "vihara", "bodhi"]):
                             ai_response = f"For **{selected_site}**, conservative attire is strictly required. Please wear clothes that cover your shoulders and knees. White color is highly recommended."
                         else:
                             ai_response = f"For **{selected_site}**, wear comfortable, breathable clothing and good walking shoes. Since it's outdoors, don't forget a hat and sunscreen!"
-                    
                     elif any(word in q for word in ["ticket", "price", "cost", "fee", "pay", "money"]):
                         if target_audience == "Foreign Tourists":
                             ai_response = f"As a Foreign Tourist, the entrance fee for **{selected_site}** usually ranges from $15 to $30 USD. SAARC citizens may be eligible for a discount. Always carry your passport."
                         else:
                             ai_response = f"As a Local Tourist, the entrance to **{selected_site}** is generally free, or requires a very minimal maintenance fee (around Rs. 50 - 200)."
-                            
                     elif any(word in q for word in ["history", "built", "king", "old", "create", "who"]):
                         if "Sigiriya" in selected_site:
                             ai_response = f"**{selected_site}** was built by King Kashyapa (477 – 495 CE) as his new capital. It is world-renowned for its frescoes and advanced water gardens."
@@ -336,19 +342,15 @@ if app_mode == "1. Tourist Explorer (User)":
                             ai_response = f"**{selected_site}** houses the sacred relic of the tooth of the Buddha. The present temple structures were primarily built by the Kandyan Kings."
                         else:
                             ai_response = f"**{selected_site}** holds deep historical significance in the {selected_district} district, representing Sri Lanka's rich architectural and cultural heritage."
-                            
                     elif any(word in q for word in ["hello", "hi", "hey"]):
                         ai_response = f"Hello there! I am ready to guide you around **{selected_site}**. What would you like to know?"
-                        
                     else:
                         ai_response = f"That's a great question! While I don't have the exact data for '{user_question}' right now, please remember that **{selected_site}** is currently facing {st.session_state.live_overcrowding} crowds. Stay safe!"
                         
                     message_placeholder.markdown(ai_response)
-                
-                # Save AI response to memory
                 st.session_state.chat_history.append({"role": "assistant", "content": ai_response})
 
-# --- 5. Admin Dashboard ---
+# --- 5. ADMIN DASHBOARD ROUTING ---
 elif app_mode == "2. Admin Dashboard (Panel)":
-    st.title("📊 System Analytics Dashboard")
-    st.info("📌 This view is for SLTDA Administrators to monitor model accuracy and redirection trends.")
+    # Call the function from the external file!
+    render_admin_dashboard(df, ai_model, feature_columns, fpr, tpr, roc_auc)
